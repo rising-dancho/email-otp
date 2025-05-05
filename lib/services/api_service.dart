@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:email_otp/models/login_response_model.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,8 +6,8 @@ class APIService {
   static var client = http.Client();
 
   static Future<LoginResponseModel> otpLogin(String email) async {
-    var url = Uri.http(
-      "https://thesis-prototype-object-counting-uwen.vercel.app/",
+    var url = Uri.https(
+      "thesis-prototype-object-counting-uwen.vercel.app", // Use https here
       "api/otp-login",
     );
 
@@ -18,7 +17,20 @@ class APIService {
       body: jsonEncode({"email": email}),
     );
 
-    return loginResponseModel(response.body);
+    if (response.statusCode == 200) {
+      print("Response body: ${response.body}"); // Log the response body
+      // Ensure the response is JSON
+      if (response.headers['content-type']?.contains('application/json') ??
+          false) {
+        return loginResponseModel(response.body);
+      } else {
+        throw Exception(
+          "Expected JSON, but received ${response.headers['content-type']}",
+        );
+      }
+    } else {
+      throw Exception("Failed to load data: ${response.statusCode}");
+    }
   }
 
   static Future<LoginResponseModel> verifyOTP(
@@ -26,8 +38,8 @@ class APIService {
     String otpCode,
     String otpHash,
   ) async {
-    var url = Uri.http(
-      "https://thesis-prototype-object-counting-uwen.vercel.app/",
+    var url = Uri.https(
+      "thesis-prototype-object-counting-uwen.vercel.app",
       "api/otp-verify",
     );
 
@@ -36,7 +48,14 @@ class APIService {
       headers: {"Content-type": "application/json"},
       body: jsonEncode({"email": email, "otp": otpCode, "otpHash": otpHash}),
     );
+    print("Email: $email, OTP Code: $otpCode, OTP Hash: $otpHash");
 
-    return loginResponseModel(response.body);
+    if (response.statusCode == 200) {
+      return loginResponseModel(response.body);
+    } else {
+      throw Exception(
+        "Failed to verify OTP. Status code: ${response.statusCode}",
+      );
+    }
   }
 }
